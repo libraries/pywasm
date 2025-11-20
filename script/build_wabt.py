@@ -23,15 +23,15 @@ def cd(dst: str) -> typing.Generator[None, typing.Any, None]:
 root = os.path.dirname(os.path.dirname(__file__))
 os.chdir(root)
 
-version = '1.0.37'
+version = '1.0.39'
 url = ''
 match platform.system().lower():
     case 'darwin':
-        url = f'https://github.com/WebAssembly/wabt/releases/download/{version}/wabt-{version}-macos-14.tar.gz'
+        url = f'https://github.com/WebAssembly/wabt/releases/download/{version}/wabt-{version}-macos-arm64.tar.gz'
     case 'linux':
-        url = f'https://github.com/WebAssembly/wabt/releases/download/{version}/wabt-{version}-ubuntu-20.04.tar.gz'
+        url = f'https://github.com/WebAssembly/wabt/releases/download/{version}/wabt-{version}-linux-x64.tar.gz'
     case 'windows':
-        url = f'https://github.com/WebAssembly/wabt/releases/download/{version}/wabt-{version}-windows.tar.gz'
+        url = f'https://github.com/WebAssembly/wabt/releases/download/{version}/wabt-{version}-windows-x64.tar.gz'
     case _:
         assert 0
 out = os.path.basename(url)
