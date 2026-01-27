@@ -832,7 +832,7 @@ class Preview1:
             elem_len = mems.get_u32(iovs_ptr + 4)
             data = [
                 lambda: os.read(file.host_fd, elem_len),
-                lambda: file.pipe.read(elem_len),
+                lambda: file.pipe.read(elem_len) if file.pipe else b'',
             ][self.help_pipe(args[0])]()
             if len(data) == 0:
                 break
@@ -965,7 +965,7 @@ class Preview1:
             data.extend(elem)
         size = [
             lambda: os.write(file.host_fd, data),
-            lambda: file.pipe.write(data),
+            lambda: file.pipe.write(data) if file.pipe else 0,
         ][int(self.help_pipe(args[0]))]()
         mems.put_u32(args[3], size)
         return [self.ERRNO_SUCCESS]
@@ -1072,8 +1072,9 @@ class Preview1:
         name = mems.get(args[2], args[3]).decode()
         if self.help_escp(file.wasm_name, name):
             return [self.ERRNO_PERM]
+        foll = flag & self.LOOKUPFLAGS_SYMLINK_FOLLOW != 0
         try:
-            info = os.stat(name, dir_fd=file.host_fd, follow_symlinks=flag & self.LOOKUPFLAGS_SYMLINK_FOLLOW)
+            info = os.stat(name, dir_fd=file.host_fd, follow_symlinks=foll)
         except FileNotFoundError:
             return [self.ERRNO_NOENT]
         mems.put_u64(args[4], 1)
@@ -1113,8 +1114,9 @@ class Preview1:
             mtim = args[5]
         if args[6] & self.FSTFLAGS_MTIM_NOW:
             mtim = time.time_ns()
+        foll = flag & self.LOOKUPFLAGS_SYMLINK_FOLLOW != 0
         try:
-            os.utime(name, ns=(atim, mtim), dir_fd=file.host_fd, follow_symlinks=flag & self.LOOKUPFLAGS_SYMLINK_FOLLOW)
+            os.utime(name, ns=(atim, mtim), dir_fd=file.host_fd, follow_symlinks=foll)
         except FileNotFoundError:
             return [self.ERRNO_NOENT]
         return [self.ERRNO_SUCCESS]
@@ -1136,7 +1138,7 @@ class Preview1:
             return [self.ERRNO_PERM]
         if self.help_escp(dest.wasm_name, dest_name):
             return [self.ERRNO_PERM]
-        foll = args[1] & self.LOOKUPFLAGS_SYMLINK_FOLLOW
+        foll = args[1] & self.LOOKUPFLAGS_SYMLINK_FOLLOW != 0
         try:
             os.link(stem_name, dest_name, src_dir_fd=stem.host_fd, dst_dir_fd=dest.host_fd, follow_symlinks=foll)
         except FileExistsError:
@@ -1489,6 +1491,7 @@ class Preview1:
         wasm_fd = len(self.fd)
         self.fd.append(self.File(
             host_fd=host_fd,
+            host_flag=0,
             host_name=file.host_name,
             host_status=self.FILE_STATUS_OPENED,
             pipe=None,
