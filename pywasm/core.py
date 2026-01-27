@@ -12,11 +12,12 @@ import typing
 class ValType:
     # Value types are encoded by a single byte.
 
-    def __init__(self, data: int) -> typing.Self:
+    def __init__(self, data: int) -> None:
         assert data in [0x7f, 0x7e, 0x7d, 0x7c, 0x7b, 0x70, 0x6f]
         self.data = data
 
-    def __eq__(self, value: typing.Self) -> bool:
+    def __eq__(self, value: object) -> bool:
+        assert isinstance(value, self.__class__)
         return self.data == value.data
 
     def __hash__(self) -> int:
@@ -71,12 +72,13 @@ class ValInst:
 
     blen = 16
 
-    def __init__(self, type: ValType, data: bytearray) -> typing.Self:
+    def __init__(self, type: ValType, data: bytearray) -> None:
         assert len(data) == self.blen
         self.type = type
         self.data = data
 
-    def __eq__(self, value: typing.Self) -> bool:
+    def __eq__(self, value: object) -> bool:
+        assert isinstance(value, self.__class__)
         return self.type == value.type and self.data == value.data
 
     def __repr__(self) -> str:
@@ -97,6 +99,8 @@ class ValInst:
             case 0x6f:
                 body = repr(self.into_ref()) if self.data[4] != 0x00 else 'null'
                 return f'{self.type} {body}'
+            case _:
+                raise Exception('unreachable')
 
     @classmethod
     def from_i32(cls, n: int) -> typing.Self:
@@ -205,7 +209,7 @@ class ValInst:
         return cls(type, bytearray(struct.pack('<i', n)) + bytearray([0x01]) + bytearray(cls.blen - 5))
 
     @classmethod
-    def from_all(cls, type: ValType, n: typing.Union[int, float, bytearray]) -> typing.Self:
+    def from_all(cls, type: ValType, n: typing.Any) -> typing.Self:
         match type.data:
             case 0x7f:
                 return cls.from_i32(n)
@@ -222,7 +226,7 @@ class ValInst:
             case 0x6f:
                 return cls.from_ref(type, n)
             case _:
-                assert 0
+                raise Exception('unreachable')
 
     def into_i32(self) -> int:
         return struct.unpack('<i', self.data[0:4])[0]
@@ -279,7 +283,7 @@ class ValInst:
         assert self.data[4] == 0x01
         return self.into_i32()
 
-    def into_all(self) -> typing.Union[int, float, bytearray]:
+    def into_all(self) -> typing.Any:
         match self.type.data:
             case 0x7f:
                 return self.into_i32()
@@ -296,7 +300,7 @@ class ValInst:
             case 0x6f:
                 return self.into_ref()
             case _:
-                assert 0
+                raise Exception('unreachable')
 
     @classmethod
     def zero(cls, type: ValType) -> typing.Self:
@@ -307,12 +311,13 @@ class Bype:
     # Block types are encoded in special compressed form, by either the byte 0x40 indicating the empty type, as a
     # single value type, or as a type index encoded as a positive signed integer.
 
-    def __init__(self, kind: int, data: int) -> typing.Self:
+    def __init__(self, kind: int, data: int) -> None:
         assert kind in [0x00, 0x01, 0x02]
         self.kind = kind
         self.data = data
 
-    def __eq__(self, value: typing.Self) -> bool:
+    def __eq__(self, value: object) -> bool:
+        assert isinstance(value, self.__class__)
         return self.kind == value.kind and self.data == value.data
 
     def __repr__(self) -> str:
@@ -338,7 +343,7 @@ class Inst:
     # instruction's immediate arguments, where present. The only exception are structured control instructions, which
     # consist of several opcodes bracketing their nested instruction sequences.
 
-    def __init__(self, opcode: int, args: typing.List[typing.Any]) -> typing.Self:
+    def __init__(self, opcode: int, args: typing.List[typing.Any]) -> None:
         self.opcode = opcode
         self.args = args
 
@@ -368,13 +373,13 @@ class Inst:
             e = pywasm.leb128.u.encode(pywasm.leb128.u.decode_reader(r)[0])
             b = int.from_bytes(bytearray([b]) + e)
         assert b in pywasm.opcode.name, hex(b)
-        o = Inst(b, [])
+        o = cls(b, [])
         match o.opcode:
             case pywasm.opcode.block:
                 o.args.append(Bype.from_reader(r))
                 o.args.append([])
                 for _ in range(1 << 32):
-                    i = Inst.from_reader(r)
+                    i = cls.from_reader(r)
                     if i.opcode == pywasm.opcode.end:
                         break
                     o.args[1].append(i)
@@ -382,7 +387,7 @@ class Inst:
                 o.args.append(Bype.from_reader(r))
                 o.args.append([])
                 for _ in range(1 << 32):
-                    i = Inst.from_reader(r)
+                    i = cls.from_reader(r)
                     if i.opcode == pywasm.opcode.end:
                         break
                     o.args[1].append(i)
@@ -392,7 +397,7 @@ class Inst:
                 o.args.append([])
                 argidx = 1
                 for _ in range(1 << 32):
-                    i = Inst.from_reader(r)
+                    i = cls.from_reader(r)
                     if i.opcode == pywasm.opcode.end:
                         break
                     if i.opcode == pywasm.opcode.else_fi:
@@ -712,7 +717,7 @@ class Expr:
     # Function bodies, initialization values for globals, and offsets of element or data segments are given as
     # expressions, which are sequences of instructions terminated by an end marker.
 
-    def __init__(self, data: typing.List[Inst]) -> typing.Self:
+    def __init__(self, data: typing.List[Inst]) -> None:
         self.data = data
 
     def __repr__(self) -> str:
@@ -738,7 +743,7 @@ class LocalsDesc:
     # local indices in the function’s body. The index of the first local is the smallest index not referencing a
     # parameter.
 
-    def __init__(self, n: int, type: ValType) -> typing.Self:
+    def __init__(self, n: int, type: ValType) -> None:
         self.n = n
         self.type = type
 
@@ -753,7 +758,7 @@ class LocalsDesc:
 class LocalsInst:
     # LocalsInst holds the values of function's locals (including arguments).
 
-    def __init__(self, data: typing.List[ValInst]) -> typing.Self:
+    def __init__(self, data: typing.List[ValInst]) -> None:
         self.data = data
 
     def __repr__(self) -> str:
@@ -765,11 +770,12 @@ class FuncType:
     # Function types classify the signature of functions, mapping a vector of parameters to a vector of results. They
     # are also used to classify the inputs and outputs of instructions.
 
-    def __init__(self, args: typing.List[ValType], rets: typing.List[ValType]) -> typing.Self:
+    def __init__(self, args: typing.List[ValType], rets: typing.List[ValType]) -> None:
         self.args = args
         self.rets = rets
 
-    def __eq__(self, value: typing.Self) -> bool:
+    def __eq__(self, value: object) -> bool:
+        assert isinstance(value, self.__class__)
         return self.args == value.args and self.rets == value.rets
 
     def __repr__(self) -> str:
@@ -797,7 +803,7 @@ class FuncDesc:
     # Functions are referenced through function indices, starting with the smallest index not referencing a function
     # import.
 
-    def __init__(self, type: int, locals: typing.List[LocalsDesc], expr: Expr) -> typing.Self:
+    def __init__(self, type: int, locals: typing.List[LocalsDesc], expr: Expr) -> None:
         self.type = type
         self.locals = locals
         self.expr = expr
@@ -817,7 +823,7 @@ class FuncDesc:
 class Limits:
     # Limits are encoded with a preceding flag indicating whether a maximum is present.
 
-    def __init__(self, n: int, m: int) -> typing.Self:
+    def __init__(self, n: int, m: int) -> None:
         self.n = n
         self.m = m
 
@@ -841,7 +847,7 @@ class MemType:
     # Memory types classify linear memories and their size range. The limits constrain the minimum and optionally the
     # maximum size of a memory. The limits are given in units of page size -- the constant 65536 – abbreviated 64k.
 
-    def __init__(self, limits: Limits) -> typing.Self:
+    def __init__(self, limits: Limits) -> None:
         self.limits = limits
 
     def __repr__(self) -> str:
@@ -866,7 +872,7 @@ class MemInst:
     # It is an invariant of the semantics that the length of the byte vector, divided by page size, never exceeds the
     # maximum size, if present.
 
-    def __init__(self, type: MemType) -> typing.Self:
+    def __init__(self, type: MemType) -> None:
         self.type = type
         self.data = bytearray()
         self.size = 0
@@ -932,7 +938,7 @@ class TableType:
     # The element type funcref is the infinite union of all function types. A table of that type thus contains
     # references to functions of heterogeneous type.
 
-    def __init__(self, type: ValType, limits: Limits) -> typing.Self:
+    def __init__(self, type: ValType, limits: Limits) -> None:
         assert type in [ValType.ref_func(), ValType.ref_extern()]
         self.type = type
         self.limits = limits
@@ -955,7 +961,7 @@ class TableInst:
     # It is an invariant of the semantics that the length of the element vector never exceeds the maximum size, if
     # present.
 
-    def __init__(self, type: TableType) -> typing.Self:
+    def __init__(self, type: TableType) -> None:
         self.type = type
         self.elem: typing.List[ValInst] = []
         self.size = 0
@@ -975,7 +981,7 @@ class TableInst:
 class GlobalType:
     # Global types are encoded by their value type and a flag for their mutability.
 
-    def __init__(self, type: ValType, mut: int) -> typing.Self:
+    def __init__(self, type: ValType, mut: int) -> None:
         assert mut in [0x00, 0x01]
         self.type = type
         self.mut = mut
@@ -992,7 +998,7 @@ class GlobalType:
 class GlobalDesc:
     # The globals component of a module defines a vector of global variables (or globals for short).
 
-    def __init__(self, type: GlobalType, init: Expr) -> typing.Self:
+    def __init__(self, type: GlobalType, init: Expr) -> None:
         self.type = type
         self.init = init
 
@@ -1008,7 +1014,7 @@ class GlobalInst:
     # A global instance is the runtime representation of a global variable. It holds an individual value and a flag
     # indicating whether it is mutable. The value of mutable globals can be mutated through variable instructions or by
     # external means provided by the embedder.
-    def __init__(self, data: ValInst, mut: int) -> typing.Self:
+    def __init__(self, data: ValInst, mut: int) -> None:
         assert mut in [0x00, 0x01]
         self.data = data
         self.mut = mut
@@ -1022,7 +1028,7 @@ class Custom:
     # and are ignored by the WebAssembly semantics. Their contents consist of a name further identifying the custom
     # section, followed by an uninterpreted sequence of bytes for custom use.
 
-    def __init__(self, name: str, data: bytearray) -> typing.Self:
+    def __init__(self, name: str, data: bytearray) -> None:
         self.name = name
         self.data = data
 
@@ -1041,7 +1047,7 @@ class Import:
     # import defines an index in the respective index space. In each index space, the indices of imports go before the
     # first index of any definition contained in the module itself.
 
-    def __init__(self, module: str, name: str, kind: int, desc: typing.Any) -> typing.Self:
+    def __init__(self, module: str, name: str, kind: int, desc: typing.Any) -> None:
         self.module = module
         self.name = name
         self.kind = kind
@@ -1076,7 +1082,7 @@ class Extern:
     # An external value is the runtime representation of an entity that can be imported or exported. It is an address
     # denoting either a function instance, table instance, memory instance, or global instances in the shared store.
 
-    def __init__(self, kind: int, data: int) -> typing.Self:
+    def __init__(self, kind: int, data: int) -> None:
         assert kind in [0x00, 0x01, 0x02, 0x03]
         self.kind = kind
         self.data = data
@@ -1098,7 +1104,7 @@ class ExportDesc:
     # Each export is labeled by a unique name. Exportable definitions are functions, tables, memories, and globals,
     # which are referenced through a respective descriptor.
 
-    def __init__(self, name: str, kind: int, desc: int) -> typing.Self:
+    def __init__(self, name: str, kind: int, desc: int) -> None:
         assert kind in [0x00, 0x01, 0x02, 0x03]
         self.name = name
         self.kind = kind
@@ -1125,7 +1131,7 @@ class ExportInst:
     # An export instance is the runtime representation of an export. It defines the export's name and the associated
     # external value.
 
-    def __init__(self, name: str, data: Extern) -> typing.Self:
+    def __init__(self, name: str, data: Extern) -> None:
         self.name = name
         self.data = data
 
@@ -1138,7 +1144,7 @@ class ElemDesc:
     # segments that initialize a subrange of a table, at a given offset, from a static vector of elements.
     # The offset is given by a constant expression.
 
-    def __init__(self, kind: int, type: ValType, tidx: int, offset: Expr, init: typing.List[Expr]) -> typing.Self:
+    def __init__(self, kind: int, type: ValType, tidx: int, offset: Expr, init: typing.List[Expr]) -> None:
         assert kind >= 0x00
         assert kind <= 0x07
         self.kind = kind
@@ -1213,7 +1219,7 @@ class ElemInst:
     # An element instance is the runtime representation of an element segment. It holds a vector of references and
     # their common type.
 
-    def __init__(self, type: ValType, data: typing.List[ValInst]) -> typing.Self:
+    def __init__(self, type: ValType, data: typing.List[ValInst]) -> None:
         assert type in [ValType.ref_func(), ValType.ref_extern()]
         self.type = type
         self.data = data
@@ -1227,7 +1233,7 @@ class DataDesc:
     # segments that initialize a range of memory, at a given offset, with a static vector of bytes.
     # The offset is given by a constant expression.
 
-    def __init__(self, kind: int, midx: int, offset: Expr, init: bytearray) -> typing.Self:
+    def __init__(self, kind: int, midx: int, offset: Expr, init: bytearray) -> None:
         # The initial integer can be interpreted as a bitfield. Bit 0 indicates a passive segment, bit 1 indicates the
         # presence of an explicit memory index for an active segment.
         # In the current version of WebAssembly, at most one memory may be defined or imported in a single module, so
@@ -1250,21 +1256,25 @@ class DataDesc:
                 midx = 0
                 offset = Expr.from_reader(r)
                 init = bytearray(r.read(pywasm.leb128.u.decode_reader(r)[0]))
+                return cls(kind, midx, offset, init)
             case 0x01:
                 midx = 0
                 offset = Expr([])
                 init = bytearray(r.read(pywasm.leb128.u.decode_reader(r)[0]))
+                return cls(kind, midx, offset, init)
             case 0x02:
                 midx = pywasm.leb128.u.decode_reader(r)[0]
                 offset = Expr.from_reader(r)
                 init = bytearray(r.read(pywasm.leb128.u.decode_reader(r)[0]))
-        return cls(kind, midx, offset, init)
+                return cls(kind, midx, offset, init)
+            case _:
+                raise Exception('unreachable')
 
 
 class DataInst:
     # An data instance is the runtime representation of a data segment. It holds a vector of bytes.
 
-    def __init__(self, data: bytearray) -> typing.Self:
+    def __init__(self, data: bytearray) -> None:
         self.data = data
 
     def __repr__(self) -> str:
@@ -1398,7 +1408,7 @@ class ModuleInst:
     # A module instance is the runtime representation of a module. It is created by instantiating a module, and
     # collects runtime representations of all entities that are imported, defined, or exported by the module.
 
-    def __init__(self) -> typing.Self:
+    def __init__(self) -> None:
         self.type: typing.List[FuncType] = []
         self.func: typing.List[int] = []
         self.tabl: typing.List[int] = []
@@ -1412,7 +1422,7 @@ class ModuleInst:
 class FuncInst:
     # It effectively is a closure of the original function over the runtime module instance of its originating module.
 
-    def __init__(self, type: FuncType, module: ModuleInst, code: FuncDesc) -> typing.Self:
+    def __init__(self, type: FuncType, module: ModuleInst, code: FuncDesc) -> None:
         self.kind = 0x00
         self.type = type
         self.module = module
@@ -1428,7 +1438,7 @@ class FuncHost:
     # specification, it is assumed that when invoked, a host function behaves non-deterministically, but within certain
     # constraints that ensure the integrity of the runtime.
 
-    def __init__(self, type: FuncType, hostcode: typing.Callable) -> typing.Self:
+    def __init__(self, type: FuncType, hostcode: typing.Callable) -> None:
         self.kind = 0x01
         self.type = type
         self.hostcode = hostcode
@@ -1497,7 +1507,7 @@ class Label:
     # Labels carry an argument arity n and their associated branch target, which is expressed syntactically as an
     # instruction sequence.
 
-    def __init__(self, arity: int, frame: int, value: int, carry: int, instr: typing.List[Inst], index: int) -> typing.Self:
+    def __init__(self, arity: int, frame: int, value: int, carry: int, instr: typing.List[Inst], index: int) -> None:
         assert carry in [0x00, 0x01, 0x03]
         self.arity = arity
         self.frame = frame
@@ -1515,7 +1525,7 @@ class Frame:
     # (including arguments) in the order corresponding to their static local indices, and a reference to the function's
     # own module instance.
 
-    def __init__(self, module: ModuleInst, locals: LocalsInst, arity: int, label: int, value: int) -> typing.Self:
+    def __init__(self, module: ModuleInst, locals: LocalsInst, arity: int, label: int, value: int) -> None:
         self.module = module
         self.locals = locals
         self.arity = arity
@@ -1536,7 +1546,7 @@ class Stack:
     # These entries can occur on the stack in any order during the execution of a program. Stack entries are described
     # by abstract syntax as follows.
 
-    def __init__(self) -> typing.Self:
+    def __init__(self) -> None:
         self.value: typing.List[ValInst] = []
         self.label: typing.List[Label] = []
         self.frame: typing.List[Frame] = []
@@ -1546,7 +1556,7 @@ class Machine:
     # Execution behavior is defined in terms of an abstract machine that models the program state. It includes a stack,
     # which records operand values and control constructs, and an abstract store containing global state.
 
-    def __init__(self) -> typing.Self:
+    def __init__(self) -> None:
         self.store = Store()
         self.stack = Stack()
 
@@ -1701,6 +1711,7 @@ class Machine:
     def invocate(self, addr: int, args: typing.List[ValInst]) -> typing.List[ValInst]:
         func = self.store.func[addr]
         assert func.kind == 0x00
+        assert isinstance(func, FuncInst)
         for a, b in zip(func.type.args, args):
             assert a == b.type
         self.stack.frame.append(Frame(ModuleInst(), LocalsInst([]), 0, 0, 0))
@@ -1743,6 +1754,8 @@ class Machine:
                 return FuncType([], [ValType(bype.data)])
             case 0x02:
                 return self.stack.frame[-1].module.type[bype.data]
+            case _:
+                raise Exception('unreachable')
 
     def evaluate_call(self, addr: int) -> None:
         func = self.store.func[addr]
@@ -1750,7 +1763,7 @@ class Machine:
         nret = len(func.type.rets)
         match func.kind:
             case 0x00:
-                # Call stack exhausted.
+                assert isinstance(func, FuncInst)
                 assert len(self.stack.frame) < 1024
                 locals = LocalsInst(args)
                 for e in func.code.locals:
@@ -1771,11 +1784,12 @@ class Machine:
                     0,
                 ))
             case 0x01:
+                assert isinstance(func, FuncHost)
                 rets = func.hostcode(self, [e.into_all() for e in args])
                 rets = [ValInst.from_all(a, b) for a, b in zip(func.type.rets, rets)]
                 self.stack.value.extend(rets)
             case _:
-                assert 0
+                raise Exception('unreachable')
 
     def evaluate_mem_load(self, offset: int, size: int) -> bytearray:
         mems = self.store.mems[self.stack.frame[-1].module.mems[0]]
@@ -4110,7 +4124,7 @@ class Machine:
 class Runtime:
     # A webassembly runtime manages Store, stack, and other runtime structure. They forming the WebAssembly abstract.
 
-    def __init__(self) -> typing.Self:
+    def __init__(self) -> None:
         self.machine = Machine()
         self.imports: typing.Dict[str, typing.Dict[str, Extern]] = {}
 
@@ -4166,12 +4180,13 @@ class Runtime:
         module: ModuleInst,
         func: str,
         args: typing.List[int | float | bytearray]
-    ) -> typing.List[int | float | bytearray]:
+    ) -> typing.List:
         # Once a module has been instantiated, any exported function can be invoked externally via its function address
         # in the store and an appropriate list of argument values.
-        addr = [e for e in module.exps if e.name == func][0].data.data
-        func = self.machine.store.func[addr]
-        assert len(func.type.args) == len(args)
-        args = [ValInst.from_all(a, b) for a, b in zip(func.type.args, args)]
-        rets = self.machine.invocate(addr, args)
-        return [e.into_all() for e in rets]
+        func_addr = [e for e in module.exps if e.name == func][0].data.data
+        func_inst = self.machine.store.func[func_addr]
+        assert len(func_inst.type.args) == len(args)
+        func_args = [ValInst.from_all(a, b) for a, b in zip(func_inst.type.args, args)]
+        func_rets = self.machine.invocate(func_addr, func_args)
+        rets = [e.into_all() for e in func_rets]
+        return rets

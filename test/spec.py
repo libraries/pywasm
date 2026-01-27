@@ -48,7 +48,7 @@ def valj(j: typing.Dict) -> pywasm.ValInst:
                     data = [valj({'type': 'f64', 'value': e}).into_u64() for e in j['value']]
                     return pywasm.ValInst.from_v128_u64(data)
                 case _:
-                    assert 0
+                    raise Exception('unreachable')
         case 'funcref':
             match j['value']:
                 case 'null':
@@ -62,7 +62,7 @@ def valj(j: typing.Dict) -> pywasm.ValInst:
                 case _:
                     return pywasm.ValInst.from_ref(pywasm.core.ValType.ref_extern(), int(j['value']))
         case _:
-            assert 0
+            raise Exception('unreachable')
 
 
 def vale(a: pywasm.ValInst, b: pywasm.ValInst) -> bool:
@@ -96,10 +96,10 @@ def vale(a: pywasm.ValInst, b: pywasm.ValInst) -> bool:
         return a.into_i64() == b.into_i64()
     if a.type == pywasm.core.ValType.ref_extern():
         return a.into_i64() == b.into_i64()
-    assert 0
+    raise Exception('unreachable')
 
 
-def host(runtime: pywasm.core.Runtime) -> typing.Dict[str, typing.Dict[str, pywasm.core.Extern]]:
+def host(runtime: pywasm.core.Runtime):
     # See https://github.com/WebAssembly/spec/blob/w3c-1.0/interpreter/host/spectest.ml
     runtime.imports['spectest'] = {
         'global_i32': runtime.allocate_global(
@@ -151,8 +151,8 @@ all_test = [
 for desc in all_test:
     suit = json.loads(pathlib.Path(desc).read_text())['commands']
     runtime = pywasm.Runtime()
-    cmodule: pywasm.ModuleInst
-    lmodule: pywasm.ModuleInst
+    cmodule = pywasm.ModuleInst()
+    lmodule = pywasm.ModuleInst()
     mmodule = {}
     host(runtime)
     for elem in suit:
@@ -238,7 +238,7 @@ for desc in all_test:
                     case _:
                         assert 0
             case 'assert_uninstantiable':
-                name = pathlib.Path(desc).parent.joinpath(elem['filename'])
+                name = str(pathlib.Path(desc).parent.joinpath(elem['filename']))
                 try:
                     lmodule = runtime.instance_from_file(name)
                 except:
@@ -248,7 +248,7 @@ for desc in all_test:
                 else:
                     assert 0
             case 'assert_unlinkable':
-                name = pathlib.Path(desc).parent.joinpath(elem['filename'])
+                name = str(pathlib.Path(desc).parent.joinpath(elem['filename']))
                 try:
                     lmodule = runtime.instance_from_file(name)
                 except:
@@ -258,7 +258,7 @@ for desc in all_test:
                 else:
                     assert 0
             case 'module':
-                name = pathlib.Path(desc).parent.joinpath(elem['filename'])
+                name = str(pathlib.Path(desc).parent.joinpath(elem['filename']))
                 lmodule = runtime.instance_from_file(name)
                 if 'name' in elem:
                     mmodule[elem['name']] = lmodule
