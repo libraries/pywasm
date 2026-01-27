@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "pywasm"
-version = "2.2.1"
+version = "2.2.2"
 authors = [
   { name="Mohanson", email="mohanson@outlook.com" },
 ]
