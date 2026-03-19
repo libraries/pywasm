@@ -2,6 +2,8 @@ name: develop
 
 on:
   pull_request:
+    types:
+      - opened
   push:
 
 jobs:
@@ -11,14 +13,14 @@ jobs:
         os: [macos-latest, ubuntu-latest, windows-latest]
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v3
-      - uses: actions/setup-python@v4
+      - uses: actions/checkout@v6
+      - uses: actions/setup-python@v6
         with:
-          python-version: '3.13'
+          python-version: '3.14'
       - name: Wabt
         run: |
           python script/build_wabt.py
-          echo $(pwd)/res/wabt/bin >> $GITHUB_PATH
+          echo ${{ github.workspace }}/res/wabt/bin >> ${{ github.path }}
       - name: Test
         run: |
           python -m pip install --editable .
