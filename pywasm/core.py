@@ -63,7 +63,7 @@ class ValType:
         return cls(0x6f)
 
     @classmethod
-    def from_reader(cls, r: typing.BinaryIO) -> typing.Self:
+    def from_reader(cls, r: io.IOBase) -> typing.Self:
         return cls(ord(r.read(1)))
 
 
@@ -145,61 +145,61 @@ class ValInst:
         return cls(ValType.v128(), n + bytearray(cls.blen - 16))
 
     @classmethod
-    def from_v128_i8(cls, n: typing.List[int]) -> typing.Self:
+    def from_v128_i8(cls, n: list[int]) -> typing.Self:
         assert len(n) == 16
         data = bytearray().join([pywasm.arith.i8.into_bytearray(e) for e in n]) + bytearray(cls.blen - 16)
         return cls(ValType.v128(), data)
 
     @classmethod
-    def from_v128_u8(cls, n: typing.List[int]) -> typing.Self:
+    def from_v128_u8(cls, n: list[int]) -> typing.Self:
         assert len(n) == 16
         data = bytearray().join([pywasm.arith.u8.into_bytearray(e) for e in n]) + bytearray(cls.blen - 16)
         return cls(ValType.v128(), data)
 
     @classmethod
-    def from_v128_i16(cls, n: typing.List[int]) -> typing.Self:
+    def from_v128_i16(cls, n: list[int]) -> typing.Self:
         assert len(n) == 8
         data = bytearray().join([pywasm.arith.i16.into_bytearray(e) for e in n]) + bytearray(cls.blen - 16)
         return cls(ValType.v128(), data)
 
     @classmethod
-    def from_v128_u16(cls, n: typing.List[int]) -> typing.Self:
+    def from_v128_u16(cls, n: list[int]) -> typing.Self:
         assert len(n) == 8
         data = bytearray().join([pywasm.arith.u16.into_bytearray(e) for e in n]) + bytearray(cls.blen - 16)
         return cls(ValType.v128(), data)
 
     @classmethod
-    def from_v128_i32(cls, n: typing.List[int]) -> typing.Self:
+    def from_v128_i32(cls, n: list[int]) -> typing.Self:
         assert len(n) == 4
         data = bytearray().join([pywasm.arith.i32.into_bytearray(e) for e in n]) + bytearray(cls.blen - 16)
         return cls(ValType.v128(), data)
 
     @classmethod
-    def from_v128_u32(cls, n: typing.List[int]) -> typing.Self:
+    def from_v128_u32(cls, n: list[int]) -> typing.Self:
         assert len(n) == 4
         data = bytearray().join([pywasm.arith.u32.into_bytearray(e) for e in n]) + bytearray(cls.blen - 16)
         return cls(ValType.v128(), data)
 
     @classmethod
-    def from_v128_i64(cls, n: typing.List[int]) -> typing.Self:
+    def from_v128_i64(cls, n: list[int]) -> typing.Self:
         assert len(n) == 2
         data = bytearray().join([pywasm.arith.i64.into_bytearray(e) for e in n]) + bytearray(cls.blen - 16)
         return cls(ValType.v128(), data)
 
     @classmethod
-    def from_v128_u64(cls, n: typing.List[int]) -> typing.Self:
+    def from_v128_u64(cls, n: list[int]) -> typing.Self:
         assert len(n) == 2
         data = bytearray().join([pywasm.arith.u64.into_bytearray(e) for e in n]) + bytearray(cls.blen - 16)
         return cls(ValType.v128(), data)
 
     @classmethod
-    def from_v128_f32(cls, n: typing.List[float]) -> typing.Self:
+    def from_v128_f32(cls, n: list[float]) -> typing.Self:
         assert len(n) == 4
         data = bytearray().join([pywasm.arith.f32.into_bytearray(e) for e in n]) + bytearray(cls.blen - 16)
         return cls(ValType.v128(), data)
 
     @classmethod
-    def from_v128_f64(cls, n: typing.List[float]) -> typing.Self:
+    def from_v128_f64(cls, n: list[float]) -> typing.Self:
         assert len(n) == 2
         data = bytearray().join([pywasm.arith.f64.into_bytearray(e) for e in n]) + bytearray(cls.blen - 16)
         return cls(ValType.v128(), data)
@@ -249,34 +249,34 @@ class ValInst:
     def into_v128(self) -> bytearray:
         return self.data[:16].copy()
 
-    def into_v128_i8(self) -> typing.List[int]:
+    def into_v128_i8(self) -> list[int]:
         return [pywasm.arith.i8.fit(e) for e in self.data]
 
-    def into_v128_u8(self) -> typing.List[int]:
+    def into_v128_u8(self) -> list[int]:
         return [pywasm.arith.u8.fit(e) for e in self.data]
 
-    def into_v128_i16(self) -> typing.List[int]:
+    def into_v128_i16(self) -> list[int]:
         return [pywasm.arith.i16.from_bytearray(bytearray(self.data[i:i + 2])) for i in range(0, 16, 2)]
 
-    def into_v128_u16(self) -> typing.List[int]:
+    def into_v128_u16(self) -> list[int]:
         return [pywasm.arith.u16.from_bytearray(bytearray(self.data[i:i + 2])) for i in range(0, 16, 2)]
 
-    def into_v128_i32(self) -> typing.List[int]:
+    def into_v128_i32(self) -> list[int]:
         return [pywasm.arith.i32.from_bytearray(bytearray(self.data[i:i + 4])) for i in range(0, 16, 4)]
 
-    def into_v128_u32(self) -> typing.List[int]:
+    def into_v128_u32(self) -> list[int]:
         return [pywasm.arith.u32.from_bytearray(bytearray(self.data[i:i + 4])) for i in range(0, 16, 4)]
 
-    def into_v128_i64(self) -> typing.List[int]:
+    def into_v128_i64(self) -> list[int]:
         return [pywasm.arith.i64.from_bytearray(bytearray(self.data[i:i + 8])) for i in range(0, 16, 8)]
 
-    def into_v128_u64(self) -> typing.List[int]:
+    def into_v128_u64(self) -> list[int]:
         return [pywasm.arith.u64.from_bytearray(bytearray(self.data[i:i + 8])) for i in range(0, 16, 8)]
 
-    def into_v128_f32(self) -> typing.List[float]:
+    def into_v128_f32(self) -> list[float]:
         return [pywasm.arith.f32.from_bytearray(bytearray(self.data[i:i + 4])) for i in range(0, 16, 4)]
 
-    def into_v128_f64(self) -> typing.List[float]:
+    def into_v128_f64(self) -> list[float]:
         return [pywasm.arith.f64.from_bytearray(bytearray(self.data[i:i + 8])) for i in range(0, 16, 8)]
 
     def into_ref(self) -> int:
@@ -328,7 +328,7 @@ class Bype:
         return repr(self.data)
 
     @classmethod
-    def from_reader(cls, r: typing.BinaryIO) -> typing.Self:
+    def from_reader(cls, r: io.IOBase) -> typing.Self:
         n = ord(r.read(1))
         if n == 0x40:
             return cls(0x00, 0x40)
@@ -343,7 +343,7 @@ class Inst:
     # instruction's immediate arguments, where present. The only exception are structured control instructions, which
     # consist of several opcodes bracketing their nested instruction sequences.
 
-    def __init__(self, opcode: int, args: typing.List[typing.Any]) -> None:
+    def __init__(self, opcode: int, args: list[typing.Any]) -> None:
         self.opcode = opcode
         self.args = args
 
@@ -367,7 +367,7 @@ class Inst:
                 e.into_disasm(indent + 4)
 
     @classmethod
-    def from_reader(cls, r: typing.BinaryIO) -> typing.Self:
+    def from_reader(cls, r: io.IOBase) -> typing.Self:
         b = ord(r.read(1))
         if b >= 0xfc:
             e = pywasm.leb128.u.encode(pywasm.leb128.u.decode_reader(r)[0])
@@ -717,7 +717,7 @@ class Expr:
     # Function bodies, initialization values for globals, and offsets of element or data segments are given as
     # expressions, which are sequences of instructions terminated by an end marker.
 
-    def __init__(self, data: typing.List[Inst]) -> None:
+    def __init__(self, data: list[Inst]) -> None:
         self.data = data
 
     def __repr__(self) -> str:
@@ -728,7 +728,7 @@ class Expr:
             e.into_disasm(indent)
 
     @classmethod
-    def from_reader(cls, r: typing.BinaryIO) -> typing.Self:
+    def from_reader(cls, r: io.IOBase) -> typing.Self:
         s = []
         for _ in range(1 << 32):
             i = Inst.from_reader(r)
@@ -751,14 +751,14 @@ class LocalsDesc:
         return f'{self.n}x{self.type}'
 
     @classmethod
-    def from_reader(cls, r: typing.BinaryIO) -> typing.Self:
+    def from_reader(cls, r: io.IOBase) -> typing.Self:
         return cls(pywasm.leb128.u.decode_reader(r)[0], ValType.from_reader(r))
 
 
 class LocalsInst:
     # LocalsInst holds the values of function's locals (including arguments).
 
-    def __init__(self, data: typing.List[ValInst]) -> None:
+    def __init__(self, data: list[ValInst]) -> None:
         self.data = data
 
     def __repr__(self) -> str:
@@ -770,7 +770,7 @@ class FuncType:
     # Function types classify the signature of functions, mapping a vector of parameters to a vector of results. They
     # are also used to classify the inputs and outputs of instructions.
 
-    def __init__(self, args: typing.List[ValType], rets: typing.List[ValType]) -> None:
+    def __init__(self, args: list[ValType], rets: list[ValType]) -> None:
         self.args = args
         self.rets = rets
 
@@ -782,7 +782,7 @@ class FuncType:
         return f'{self.args} -> {self.rets}'
 
     @classmethod
-    def from_reader(cls, r: typing.BinaryIO) -> typing.Self:
+    def from_reader(cls, r: io.IOBase) -> typing.Self:
         assert ord(r.read(1)) == 0x60
         n = pywasm.leb128.u.decode_reader(r)[0]
         args = [ValType.from_reader(r) for _ in range(n)]
@@ -803,7 +803,7 @@ class FuncDesc:
     # Functions are referenced through function indices, starting with the smallest index not referencing a function
     # import.
 
-    def __init__(self, type: int, locals: typing.List[LocalsDesc], expr: Expr) -> None:
+    def __init__(self, type: int, locals: list[LocalsDesc], expr: Expr) -> None:
         self.type = type
         self.locals = locals
         self.expr = expr
@@ -812,11 +812,11 @@ class FuncDesc:
         return f'{self.type} {self.locals}'
 
     @classmethod
-    def from_reader_type(cls, r: typing.BinaryIO) -> typing.Self:
+    def from_reader_type(cls, r: io.IOBase) -> typing.Self:
         return cls(pywasm.leb128.u.decode_reader(r)[0], [], Expr([]))
 
     @classmethod
-    def from_reader_code(cls, r: typing.BinaryIO) -> typing.Self:
+    def from_reader_code(cls, r: io.IOBase) -> typing.Self:
         return cls(0, [LocalsDesc.from_reader(r) for _ in range(pywasm.leb128.u.decode_reader(r)[0])], Expr.from_reader(r))
 
 
@@ -838,7 +838,7 @@ class Limits:
         return c1 and (c2 or c3)
 
     @classmethod
-    def from_reader(cls, r: typing.BinaryIO) -> typing.Self:
+    def from_reader(cls, r: io.IOBase) -> typing.Self:
         flag = ord(r.read(1))
         return cls(pywasm.leb128.u.decode_reader(r)[0],  pywasm.leb128.u.decode_reader(r)[0] if flag else 0x00)
 
@@ -854,7 +854,7 @@ class MemType:
         return repr(self.limits)
 
     @classmethod
-    def from_reader(cls, r: typing.BinaryIO) -> typing.Self:
+    def from_reader(cls, r: io.IOBase) -> typing.Self:
         return cls(Limits.from_reader(r))
 
 
@@ -947,7 +947,7 @@ class TableType:
         return f'{self.type} {self.limits}'
 
     @classmethod
-    def from_reader(cls, r: typing.BinaryIO) -> typing.Self:
+    def from_reader(cls, r: io.IOBase) -> typing.Self:
         return cls(ValType.from_reader(r), Limits.from_reader(r))
 
 
@@ -963,7 +963,7 @@ class TableInst:
 
     def __init__(self, type: TableType) -> None:
         self.type = type
-        self.elem: typing.List[ValInst] = []
+        self.elem: list[ValInst] = []
         self.size = 0
         self.grow(type.limits.n, ValInst.zero(self.type.type))
 
@@ -991,7 +991,7 @@ class GlobalType:
         return f'{prefix} {self.type}'
 
     @classmethod
-    def from_reader(cls, r: typing.BinaryIO) -> typing.Self:
+    def from_reader(cls, r: io.IOBase) -> typing.Self:
         return cls(ValType.from_reader(r), ord(r.read(1)))
 
 
@@ -1006,7 +1006,7 @@ class GlobalDesc:
         return repr(self.type)
 
     @classmethod
-    def from_reader(cls, r: typing.BinaryIO) -> typing.Self:
+    def from_reader(cls, r: io.IOBase) -> typing.Self:
         return cls(GlobalType.from_reader(r), Expr.from_reader(r))
 
 
@@ -1033,7 +1033,7 @@ class Custom:
         self.data = data
 
     @classmethod
-    def from_reader(cls, r: typing.BinaryIO) -> typing.Self:
+    def from_reader(cls, r: io.IOBase) -> typing.Self:
         n = pywasm.leb128.u.decode_reader(r)[0]
         return cls(r.read(n).decode(), bytearray(r.read(-1)))
 
@@ -1063,7 +1063,7 @@ class Import:
         return f'{self.module}.{self.name} {kind} {self.desc}'
 
     @classmethod
-    def from_reader(cls, r: typing.BinaryIO) -> typing.Self:
+    def from_reader(cls, r: io.IOBase) -> typing.Self:
         n = pywasm.leb128.u.decode_reader(r)[0]
         module = r.read(n).decode()
         n = pywasm.leb128.u.decode_reader(r)[0]
@@ -1120,7 +1120,7 @@ class ExportDesc:
         return f'{self.name} {type_name} {self.desc}'
 
     @classmethod
-    def from_reader(cls, r: typing.BinaryIO) -> typing.Self:
+    def from_reader(cls, r: io.IOBase) -> typing.Self:
         name = bytearray(r.read(pywasm.leb128.u.decode_reader(r)[0])).decode()
         kind = ord(r.read(1))
         desc = pywasm.leb128.u.decode_reader(r)[0]
@@ -1144,7 +1144,7 @@ class ElemDesc:
     # segments that initialize a subrange of a table, at a given offset, from a static vector of elements.
     # The offset is given by a constant expression.
 
-    def __init__(self, kind: int, type: ValType, tidx: int, offset: Expr, init: typing.List[Expr]) -> None:
+    def __init__(self, kind: int, type: ValType, tidx: int, offset: Expr, init: list[Expr]) -> None:
         assert kind >= 0x00
         assert kind <= 0x07
         self.kind = kind
@@ -1157,7 +1157,7 @@ class ElemDesc:
         return f'{self.tidx}'
 
     @classmethod
-    def from_reader(cls, r: typing.BinaryIO) -> typing.Self:
+    def from_reader(cls, r: io.IOBase) -> typing.Self:
         kind = pywasm.leb128.u.decode_reader(r)[0]
         type = ValType.ref_func()
         tidx = 0
@@ -1219,7 +1219,7 @@ class ElemInst:
     # An element instance is the runtime representation of an element segment. It holds a vector of references and
     # their common type.
 
-    def __init__(self, type: ValType, data: typing.List[ValInst]) -> None:
+    def __init__(self, type: ValType, data: list[ValInst]) -> None:
         assert type in [ValType.ref_func(), ValType.ref_extern()]
         self.type = type
         self.data = data
@@ -1249,7 +1249,7 @@ class DataDesc:
         return f'{self.midx}'
 
     @classmethod
-    def from_reader(cls, r: typing.BinaryIO) -> typing.Self:
+    def from_reader(cls, r: io.IOBase) -> typing.Self:
         kind = pywasm.leb128.u.decode_reader(r)[0]
         match kind:
             case 0x00:
@@ -1288,16 +1288,16 @@ class ModuleDesc:
 
     def __init__(
         self,
-        type: typing.List[FuncType],
-        func: typing.List[FuncDesc],
-        tabl: typing.List[TableType],
-        mems: typing.List[MemType],
-        glob: typing.List[GlobalDesc],
-        elem: typing.List[ElemDesc],
-        data: typing.List[DataDesc],
+        type: list[FuncType],
+        func: list[FuncDesc],
+        tabl: list[TableType],
+        mems: list[MemType],
+        glob: list[GlobalDesc],
+        elem: list[ElemDesc],
+        data: list[DataDesc],
         star: int,
-        imps: typing.List[Import],
-        exps: typing.List[ExportDesc]
+        imps: list[Import],
+        exps: list[ExportDesc]
     ):
         self.type = type
         self.func = func
@@ -1311,20 +1311,20 @@ class ModuleDesc:
         self.exps = exps
 
     @classmethod
-    def from_reader(cls, r: typing.BinaryIO):
+    def from_reader(cls, r: io.IOBase):
         assert bytearray(r.read(4)) == bytearray([0x00, 0x61, 0x73, 0x6d])
         assert bytearray(r.read(4)) == bytearray([0x01, 0x00, 0x00, 0x00])
 
-        type: typing.List[FuncType] = []
-        func: typing.List[FuncDesc] = []
-        tabl: typing.List[TableType] = []
-        mems: typing.List[MemType] = []
-        glob: typing.List[GlobalDesc] = []
-        elem: typing.List[ElemDesc] = []
-        data: typing.List[DataDesc] = []
+        type: list[FuncType] = []
+        func: list[FuncDesc] = []
+        tabl: list[TableType] = []
+        mems: list[MemType] = []
+        glob: list[GlobalDesc] = []
+        elem: list[ElemDesc] = []
+        data: list[DataDesc] = []
         star: int = -1
-        imps: typing.List[Import] = []
-        exps: typing.List[ExportDesc] = []
+        imps: list[Import] = []
+        exps: list[ExportDesc] = []
 
         for _ in range(32):
             section_id_byte = r.read(1)
@@ -1409,14 +1409,14 @@ class ModuleInst:
     # collects runtime representations of all entities that are imported, defined, or exported by the module.
 
     def __init__(self) -> None:
-        self.type: typing.List[FuncType] = []
-        self.func: typing.List[int] = []
-        self.tabl: typing.List[int] = []
-        self.mems: typing.List[int] = []
-        self.glob: typing.List[int] = []
-        self.elem: typing.List[int] = []
-        self.data: typing.List[int] = []
-        self.exps: typing.List[ExportInst] = []
+        self.type: list[FuncType] = []
+        self.func: list[int] = []
+        self.tabl: list[int] = []
+        self.mems: list[int] = []
+        self.glob: list[int] = []
+        self.elem: list[int] = []
+        self.data: list[int] = []
+        self.exps: list[ExportInst] = []
 
 
 class FuncInst:
@@ -1453,12 +1453,12 @@ class Store:
     # life time of the abstract machine
 
     def __init__(self):
-        self.func: typing.List[FuncInst | FuncHost] = []
-        self.tabl: typing.List[TableInst] = []
-        self.mems: typing.List[MemInst] = []
-        self.glob: typing.List[GlobalInst] = []
-        self.elem: typing.List[ElemInst] = []
-        self.data: typing.List[DataInst] = []
+        self.func: list[FuncInst | FuncHost] = []
+        self.tabl: list[TableInst] = []
+        self.mems: list[MemInst] = []
+        self.glob: list[GlobalInst] = []
+        self.elem: list[ElemInst] = []
+        self.data: list[DataInst] = []
 
     def allocate_func_wasm(self, module: ModuleInst, func: FuncDesc) -> int:
         addr = len(self.func)
@@ -1490,7 +1490,7 @@ class Store:
         self.glob.append(inst)
         return addr
 
-    def allocate_elem(self, type: ValType, data: typing.List[ValInst]) -> int:
+    def allocate_elem(self, type: ValType, data: list[ValInst]) -> int:
         addr = len(self.elem)
         inst = ElemInst(type, data)
         self.elem.append(inst)
@@ -1507,7 +1507,7 @@ class Label:
     # Labels carry an argument arity n and their associated branch target, which is expressed syntactically as an
     # instruction sequence.
 
-    def __init__(self, arity: int, frame: int, value: int, carry: int, instr: typing.List[Inst], index: int) -> None:
+    def __init__(self, arity: int, frame: int, value: int, carry: int, instr: list[Inst], index: int) -> None:
         assert carry in [0x00, 0x01, 0x03]
         self.arity = arity
         self.frame = frame
@@ -1547,9 +1547,9 @@ class Stack:
     # by abstract syntax as follows.
 
     def __init__(self) -> None:
-        self.value: typing.List[ValInst] = []
-        self.label: typing.List[Label] = []
-        self.frame: typing.List[Frame] = []
+        self.value: list[ValInst] = []
+        self.label: list[Label] = []
+        self.frame: list[Frame] = []
 
 
 class Machine:
@@ -1563,9 +1563,9 @@ class Machine:
     def allocate(
         self,
         module: ModuleDesc,
-        extern: typing.List[Extern],
-        globin: typing.List[ValInst],
-        elemin: typing.List[typing.List[ValInst]]
+        extern: list[Extern],
+        globin: list[ValInst],
+        elemin: list[list[ValInst]]
     ) -> ModuleInst:
         inst = ModuleInst()
         inst.type = module.type
@@ -1611,7 +1611,7 @@ class Machine:
             inst.exps.append(expi)
         return inst
 
-    def instance(self, module: ModuleDesc, extern: typing.List[Extern]) -> ModuleInst:
+    def instance(self, module: ModuleDesc, extern: list[Extern]) -> ModuleInst:
         assert len(module.imps) == len(extern)
         for a, b in zip(module.imps, extern):
             assert a.kind == b.kind
@@ -1626,8 +1626,8 @@ class Machine:
                 case 0x03:
                     assert self.store.glob[b.data].data.type == a.desc.type
                     assert self.store.glob[b.data].mut == a.desc.mut
-        globin: typing.List[ValInst] = []
-        elemin: typing.List[typing.List[ValInst]] = []
+        globin: list[ValInst] = []
+        elemin: list[list[ValInst]] = []
         auxmod = ModuleInst()
         auxmod.func.extend([e.data for e in extern if e.kind == 0x00])
         auxmod.func.extend([len(self.store.func) + i for i in range(len(module.func))])
@@ -1644,7 +1644,7 @@ class Machine:
             globin.append(rets)
         for i, e in enumerate(module.elem):
             pywasm.log.debugln('init elem', e)
-            l: typing.List[ValInst] = []
+            l: list[ValInst] = []
             for f in e.init:
                 self.stack.label.append(Label(1, 1, 0, 1, f.data, 0))
                 self.evaluate()
@@ -1708,7 +1708,7 @@ class Machine:
         self.stack.frame.pop()
         return newmod
 
-    def invocate(self, addr: int, args: typing.List[ValInst]) -> typing.List[ValInst]:
+    def invocate(self, addr: int, args: list[ValInst]) -> list[ValInst]:
         func = self.store.func[addr]
         assert func.kind == 0x00
         assert isinstance(func, FuncInst)
@@ -4126,7 +4126,7 @@ class Runtime:
 
     def __init__(self) -> None:
         self.machine = Machine()
-        self.imports: typing.Dict[str, typing.Dict[str, Extern]] = {}
+        self.imports: dict[str, dict[str, Extern]] = {}
 
     def allocate_func_host(self, type: FuncType, func: typing.Callable) -> Extern:
         # Allocate new instances of host functions.
@@ -4165,7 +4165,7 @@ class Runtime:
         # otherwise. Instantiation can also result in a trap from initializing a table or memory from an active
         # segment or from executing the start function. It is up to the embedder to define how such conditions are
         # reported.
-        extern: typing.List[Extern] = []
+        extern: list[Extern] = []
         for e in module.imps:
             extern.append(self.imports[e.module][e.name])
         return self.machine.instance(module, extern)
@@ -4179,8 +4179,8 @@ class Runtime:
         self,
         module: ModuleInst,
         func: str,
-        args: typing.List[int | float | bytearray]
-    ) -> typing.List:
+        args: list[int | float | bytearray]
+    ) -> list:
         # Once a module has been instantiated, any exported function can be invoked externally via its function address
         # in the store and an appropriate list of argument values.
         func_addr = [e for e in module.exps if e.name == func][0].data.data

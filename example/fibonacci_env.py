@@ -1,5 +1,4 @@
 import pywasm
-import typing
 pywasm.log.lvl = 1
 
 
@@ -9,7 +8,7 @@ def fibonacci(n: int) -> int:
     return fibonacci(n - 1) + fibonacci(n - 2)
 
 
-def fibonacci_host(_: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+def fibonacci_host(_: pywasm.core.Machine, args: list[int]) -> list[int]:
     return [fibonacci(args[0])]
 
 

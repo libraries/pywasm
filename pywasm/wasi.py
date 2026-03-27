@@ -1,5 +1,6 @@
 import dataclasses
 import fcntl
+import io
 import os
 import platform
 import pywasm.core
@@ -9,7 +10,6 @@ import socket
 import stat
 import sys
 import time
-import typing
 
 
 class Preview1:
@@ -399,7 +399,7 @@ class Preview1:
         host_flag: int
         host_name: str
         host_status: int
-        pipe: typing.Optional[typing.BinaryIO]
+        pipe: io.IOBase | None
         wasm_fd: int
         wasm_flag: int
         wasm_name: str
@@ -408,12 +408,12 @@ class Preview1:
         wasm_status: int
         wasm_type: int
 
-    def __init__(self, args: typing.List[str], dirs: typing.Dict[str, str], envs: typing.Dict[str, str]):
+    def __init__(self, args: list[str], dirs: dict[str, str], envs: dict[str, str]):
         self.args = args
         self.dirs = {os.path.normpath(k): os.path.normpath(v) for k, v in dirs.items()}
         self.envs = ['='.join(e) for e in sorted(envs.items())]
         # By setting the pipe to io.BytesIO(bytearray()) to capture output or provide input.
-        self.fd: typing.List[Preview1.File] = []
+        self.fd: list[Preview1.File] = []
         self.fd.append(self.File(
             host_fd=sys.stdin.fileno(),
             host_flag=0,
@@ -478,7 +478,7 @@ class Preview1:
         # specified exit code instead.
         self.return_on_exit = 1
 
-    def args_get(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def args_get(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Read command-line argument data. The size of the array should match that returned by args_sizes_get. Each
         # argument is expected to be \0 terminated.
         mems = m.store.mems[m.stack.frame[-1].module.mems[0]]
@@ -493,7 +493,7 @@ class Preview1:
             argv_buf += 1
         return [self.ERRNO_SUCCESS]
 
-    def args_sizes_get(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def args_sizes_get(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Return command-line argument data sizes.
         mems = m.store.mems[m.stack.frame[-1].module.mems[0]]
         mems.put_u32(args[0], len(self.args))
@@ -556,19 +556,19 @@ class Preview1:
             funkype = pywasm.core.FuncType(e[1], e[2])
             runtime.imports['wasi_snapshot_preview1'][e[0]] = runtime.allocate_func_host(funkype, e[3])
 
-    def clock_res_get(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def clock_res_get(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Return the resolution of a clock.
         mems = m.store.mems[m.stack.frame[-1].module.mems[0]]
         mems.put_u64(args[1], 1)
         return [self.ERRNO_SUCCESS]
 
-    def clock_time_get(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def clock_time_get(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Return the time value of a clock.
         mems = m.store.mems[m.stack.frame[-1].module.mems[0]]
         mems.put_u64(args[2], self.help_time(args[0]))
         return [self.ERRNO_SUCCESS]
 
-    def environ_get(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def environ_get(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Read environment variable data. The sizes of the buffers should match that returned by environ_sizes_get.
         # Key/value pairs are expected to be joined with =, and terminated with 0.
         mems = m.store.mems[m.stack.frame[-1].module.mems[0]]
@@ -583,14 +583,14 @@ class Preview1:
             environ_buf += 1
         return [self.ERRNO_SUCCESS]
 
-    def environ_sizes_get(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def environ_sizes_get(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Return environment variable data sizes.
         mems = m.store.mems[m.stack.frame[-1].module.mems[0]]
         mems.put_u32(args[0], len(self.envs))
         mems.put_u32(args[1], sum([len(e) + 1 for e in self.envs]))
         return [self.ERRNO_SUCCESS]
 
-    def fd_advise(self, _: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_advise(self, _: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Provide file advisory information on a file descriptor.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -598,7 +598,7 @@ class Preview1:
             return [self.ERRNO_NOTCAPABLE]
         return [self.ERRNO_SUCCESS]
 
-    def fd_allocate(self, _: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_allocate(self, _: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Force the allocation of space in a file.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -616,7 +616,7 @@ class Preview1:
         os.lseek(file.host_fd, offs, os.SEEK_SET)
         return [self.ERRNO_SUCCESS]
 
-    def fd_close(self, _: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_close(self, _: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Close a file descriptor.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -627,7 +627,7 @@ class Preview1:
         file.wasm_status = self.FILE_STATUS_CLOSED
         return [self.ERRNO_SUCCESS]
 
-    def fd_datasync(self, _: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_datasync(self, _: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Synchronize the data of a file to disk.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -635,7 +635,7 @@ class Preview1:
             return [self.ERRNO_NOTCAPABLE]
         return [self.ERRNO_SUCCESS]
 
-    def fd_fdstat_get(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_fdstat_get(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Get the attributes of a file descriptor.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -647,7 +647,7 @@ class Preview1:
         mems.put_u64(args[1]+16, file.wasm_rights_root)
         return [self.ERRNO_SUCCESS]
 
-    def fd_fdstat_set_flags(self, _: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_fdstat_set_flags(self, _: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Adjust the flags associated with a file descriptor.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -671,7 +671,7 @@ class Preview1:
         fcntl.fcntl(file.host_fd, fcntl.F_SETFL, file.host_flag)
         return [self.ERRNO_SUCCESS]
 
-    def fd_fdstat_set_rights(self, _: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_fdstat_set_rights(self, _: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Adjust the rights associated with a file descriptor.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -685,7 +685,7 @@ class Preview1:
         file.wasm_rights_root = args[2]
         return [self.ERRNO_SUCCESS]
 
-    def fd_filestat_get(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_filestat_get(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Return the attributes of an open file.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -704,7 +704,7 @@ class Preview1:
         mems.put_u64(args[1] + 56, info.st_ctime_ns)
         return [self.ERRNO_SUCCESS]
 
-    def fd_filestat_set_size(self, _: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_filestat_set_size(self, _: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Adjust the size of an open file. If this increases the file's size, the extra bytes are filled with zeros.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -716,7 +716,7 @@ class Preview1:
         os.ftruncate(file.host_fd, args[1])
         return [self.ERRNO_SUCCESS]
 
-    def fd_filestat_set_times(self, _: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_filestat_set_times(self, _: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Adjust the timestamps of an open file or directory.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -741,7 +741,7 @@ class Preview1:
         os.utime(file.host_fd, ns=(atim, mtim))
         return [self.ERRNO_SUCCESS]
 
-    def fd_pread(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_pread(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Read from a file descriptor, without using and updating the file descriptor's offset.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -768,7 +768,7 @@ class Preview1:
         mems.put_u32(args[4], offs - args[3])
         return [self.ERRNO_SUCCESS]
 
-    def fd_prestat_dir_name(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_prestat_dir_name(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Return a description of the given preopened file descriptor.
         if self.help_badf(args[0]) or args[0] - 2 > len(self.dirs):
             return [self.ERRNO_BADF]
@@ -780,7 +780,7 @@ class Preview1:
         mems.put(args[1], name)
         return [self.ERRNO_SUCCESS]
 
-    def fd_prestat_get(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_prestat_get(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Return a description of the given preopened file descriptor.
         if self.help_badf(args[0]) or args[0] - 2 > len(self.dirs):
             return [self.ERRNO_BADF]
@@ -791,7 +791,7 @@ class Preview1:
         mems.put_u32(args[1] + 4, len(name))
         return [self.ERRNO_SUCCESS]
 
-    def fd_pwrite(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_pwrite(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Write to a file descriptor, without using and updating the file descriptor's offset.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -814,7 +814,7 @@ class Preview1:
         mems.put_u32(args[4], size)
         return [self.ERRNO_SUCCESS]
 
-    def fd_read(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_read(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Read from a file descriptor.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -844,7 +844,7 @@ class Preview1:
         mems.put_u32(args[3], size)
         return [self.ERRNO_SUCCESS]
 
-    def fd_readdir(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_readdir(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Read directory entries from a directory.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -874,7 +874,7 @@ class Preview1:
         mems.put_u32(args[4], dirent - args[1] if cookie >= len(result) else buflen)
         return [self.ERRNO_SUCCESS]
 
-    def fd_renumber(self, _: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_renumber(self, _: pywasm.core.Machine, args: list[int]) -> list[int]:
         if self.help_badf(args[0]) or self.help_badf(args[1]):
             return [self.ERRNO_BADF]
         stem = self.fd[args[0]]
@@ -897,7 +897,7 @@ class Preview1:
         stem.wasm_status = self.FILE_STATUS_CLOSED
         return [self.ERRNO_SUCCESS]
 
-    def fd_seek(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_seek(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Move the offset of a file descriptor.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -918,7 +918,7 @@ class Preview1:
         mems.put_u64(args[3], offs)
         return [self.ERRNO_SUCCESS]
 
-    def fd_sync(self, _: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_sync(self, _: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Synchronize the data and metadata of a file to disk.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -930,7 +930,7 @@ class Preview1:
         os.fsync(file.host_fd)
         return [self.ERRNO_SUCCESS]
 
-    def fd_tell(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_tell(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Return the current offset of a file descriptor.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -944,7 +944,7 @@ class Preview1:
         mems.put_u64(args[1], offs)
         return [self.ERRNO_SUCCESS]
 
-    def fd_write(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def fd_write(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Write to a file descriptor.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -1043,7 +1043,7 @@ class Preview1:
                     os.close(e.host_fd)
                     e.host_status = self.FILE_STATUS_CLOSED
 
-    def path_create_directory(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def path_create_directory(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Create a directory.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -1060,7 +1060,7 @@ class Preview1:
             return [self.ERRNO_EXIST]
         return [self.ERRNO_SUCCESS]
 
-    def path_filestat_get(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def path_filestat_get(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Return the attributes of a file or directory.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -1087,7 +1087,7 @@ class Preview1:
         mems.put_u64(args[4] + 56, info.st_ctime_ns)
         return [self.ERRNO_SUCCESS]
 
-    def path_filestat_set_times(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def path_filestat_set_times(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Adjust the timestamps of a file or directory.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -1121,7 +1121,7 @@ class Preview1:
             return [self.ERRNO_NOENT]
         return [self.ERRNO_SUCCESS]
 
-    def path_link(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def path_link(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Create a hard link.
         if self.help_badf(args[0]) or self.help_badf(args[4]):
             return [self.ERRNO_BADF]
@@ -1149,7 +1149,7 @@ class Preview1:
             return [self.ERRNO_PERM]
         return [self.ERRNO_SUCCESS]
 
-    def path_open(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def path_open(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Open a file or directory.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -1246,7 +1246,7 @@ class Preview1:
         mems.put_u32(args[8], wasm_fd)
         return [self.ERRNO_SUCCESS]
 
-    def path_readlink(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def path_readlink(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Read the contents of a symbolic link.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -1266,7 +1266,7 @@ class Preview1:
         mems.put_u32(args[5], size)
         return [self.ERRNO_SUCCESS]
 
-    def path_remove_directory(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def path_remove_directory(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Remove a directory.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -1289,7 +1289,7 @@ class Preview1:
             raise e
         return [self.ERRNO_SUCCESS]
 
-    def path_rename(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def path_rename(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Rename a file or directory.
         if self.help_badf(args[0]) or self.help_badf(args[3]):
             return [self.ERRNO_BADF]
@@ -1324,7 +1324,7 @@ class Preview1:
             raise e
         return [self.ERRNO_SUCCESS]
 
-    def path_symlink(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def path_symlink(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Create a symbolic link.
         if self.help_badf(args[2]):
             return [self.ERRNO_BADF]
@@ -1348,7 +1348,7 @@ class Preview1:
             return [self.ERRNO_NOTDIR]
         return [self.ERRNO_SUCCESS]
 
-    def path_unlink_file(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def path_unlink_file(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Unlink a file.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -1369,7 +1369,7 @@ class Preview1:
             return [self.ERRNO_PERM]
         return [self.ERRNO_SUCCESS]
 
-    def poll_oneoff(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def poll_oneoff(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Concurrently poll for the occurrence of a set of events.
         subs = args[0]
         outs = args[1]
@@ -1445,31 +1445,31 @@ class Preview1:
         mems.put_u32(nout, neve)
         return [self.ERRNO_SUCCESS]
 
-    def proc_exit(self, _: pywasm.core.Machine, args: typing.List[int]) -> None:
+    def proc_exit(self, _: pywasm.core.Machine, args: list[int]) -> None:
         # Terminate the process normally. An exit code of 0 indicates successful termination of the program. The
         # meanings of other values is dependent on the environment.
         if self.return_on_exit:
             raise Exception(SystemExit, args[0])
         sys.exit(args[0])
 
-    def proc_raise(self, _: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def proc_raise(self, _: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Send a signal to the process of the calling thread.
         if args[0] != self.SIGNAL_NONE:
             return [self.ERRNO_INVAL]
         return [self.ERRNO_SUCCESS]
 
-    def random_get(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def random_get(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Write high-quality random data into a buffer.
         mems = m.store.mems[m.stack.frame[-1].module.mems[0]]
         mems.put(args[0], bytearray(random.randbytes(args[1])))
         return [self.ERRNO_SUCCESS]
 
-    def sched_yield(self, _: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def sched_yield(self, _: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Temporarily yield execution of the calling thread.
         assert len(args) == 0
         return [self.ERRNO_SUCCESS]
 
-    def sock_accept(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def sock_accept(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Accept a new incoming connection.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -1506,7 +1506,7 @@ class Preview1:
         mems.put_u32(args[2], wasm_fd)
         return [self.ERRNO_SUCCESS]
 
-    def sock_recv(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def sock_recv(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Receive a message from a socket.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -1562,7 +1562,7 @@ class Preview1:
         mems.put_u32(args[5], ro_flags)
         return [self.ERRNO_SUCCESS]
 
-    def sock_send(self, m: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def sock_send(self, m: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Send a message on a socket.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]
@@ -1593,7 +1593,7 @@ class Preview1:
         mems.put_u32(args[4], size)
         return [self.ERRNO_SUCCESS]
 
-    def sock_shutdown(self, _: pywasm.core.Machine, args: typing.List[int]) -> typing.List[int]:
+    def sock_shutdown(self, _: pywasm.core.Machine, args: list[int]) -> list[int]:
         # Shut down socket send and receive channels.
         if self.help_badf(args[0]):
             return [self.ERRNO_BADF]

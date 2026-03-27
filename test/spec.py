@@ -3,13 +3,12 @@ import json
 import math
 import pathlib
 import pywasm
-import typing
 
 
 pywasm.log.lvl = 0
 
 
-def valj(j: typing.Dict) -> pywasm.ValInst:
+def valj(j: dict) -> pywasm.ValInst:
     match j['type']:
         case 'i32':
             return pywasm.ValInst.from_i32(pywasm.arith.i32.fit(int(j['value'])))

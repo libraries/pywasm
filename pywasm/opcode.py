@@ -1,5 +1,3 @@
-import typing
-
 unreachable = 0x00
 nop = 0x01
 block = 0x02
@@ -438,7 +436,7 @@ i32x4_trunc_sat_f64x2_u_zero = 0xfdfd01
 f64x2_convert_low_i32x4_s = 0xfdfe01
 f64x2_convert_low_i32x4_u = 0xfdff01
 
-name: typing.Dict[int, str] = {}
+name: dict[int, str] = {}
 name[unreachable] = 'unreachable'
 name[nop] = 'nop'
 name[block] = 'block'
