@@ -153,7 +153,7 @@ class F32:
         return struct.unpack('f', data)[0]
 
     def into_bytearray(self, n: float) -> bytearray:
-        return bytearray(struct.pack('f', n))
+        return bytearray(struct.pack('f', ctypes.c_float(n).value))
 
     def fit(self, n: float) -> float:
         return ctypes.c_float(n).value
