@@ -1777,7 +1777,7 @@ class Machine:
                 ))
                 self.stack.label.append(Label(
                     nret,
-                    len(self.stack.frame),
+                    len(self.stack.frame) - 1,
                     len(self.stack.value),
                     3,
                     func.code.expr.data,
