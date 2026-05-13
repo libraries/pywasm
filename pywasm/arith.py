@@ -150,10 +150,10 @@ class F32:
 
     def from_bytearray(self, data: bytearray) -> float:
         assert len(data) == 4
-        return struct.unpack('f', data)[0]
+        return struct.unpack('<f', data)[0]
 
     def into_bytearray(self, n: float) -> bytearray:
-        return bytearray(struct.pack('f', ctypes.c_float(n).value))
+        return bytearray(struct.pack('<f', ctypes.c_float(n).value))
 
     def fit(self, n: float) -> float:
         return ctypes.c_float(n).value
@@ -174,10 +174,10 @@ class F64:
 
     def from_bytearray(self, data: bytearray) -> float:
         assert len(data) == 8
-        return struct.unpack('d', data)[0]
+        return struct.unpack('<d', data)[0]
 
     def into_bytearray(self, n: float) -> bytearray:
-        return bytearray(struct.pack('d', n))
+        return bytearray(struct.pack('<d', n))
 
     def fit(self, n: float) -> float:
         return n
