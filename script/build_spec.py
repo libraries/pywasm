@@ -30,8 +30,8 @@ with cd('res/spec'):
     call('git checkout main')
     call('git pull origin main')
     # When update spectest, we can increase the commit id in small steps.
-    # Use: git log --reverse fffc6e12fa454e475455a7b58d3b5dc343980c10.. -- test/core
-    call('git checkout fffc6e12fa454e475455a7b58d3b5dc343980c10')
+    # Use: git log --reverse fffc6e12f.. -- test/core
+    call('git checkout fffc6e12f')
 with cd('res/spec/test/core'):
     for e in sorted(glob.glob('*.wast')):
         call(f'{wast2json} {e}')
