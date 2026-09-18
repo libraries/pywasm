@@ -48,7 +48,7 @@ for wasm_path in case:
     runtime = pywasm.core.Runtime()
     wasi = pywasm.wasi.Preview1(
         [f'{name}.wasm'] + conf.get('args', []),
-        {e: os.path.join(root, e) for e in conf.get('dirs', [])},
+        {'/': os.path.join(root, conf['root'])} if 'root' in conf else {},
         conf.get('env', {}),
     )
     wasi.fd[1].pipe = io.BytesIO(bytearray())
