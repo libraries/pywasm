@@ -23,7 +23,7 @@ def cd(dst: str) -> typing.Generator[None, typing.Any, None]:
 root = os.path.dirname(os.path.dirname(__file__))
 os.chdir(root)
 
-version = '1.0.41'
+version = '1.0.42'
 url = ''
 match platform.system().lower():
     case 'darwin':
