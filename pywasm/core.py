@@ -4176,7 +4176,7 @@ class Runtime:
             return self.instance(ModuleDesc.from_reader(f))
 
     def instance_from_reader(self, r: io.IOBase) -> ModuleInst:
-        # Instantiates a module from any binary stream
+        # Instantiates a module from any binary stream.
         return self.instance(ModuleDesc.from_reader(r))
 
     def invocate(
