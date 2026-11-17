@@ -5,7 +5,7 @@ from . import core
 from . import leb128
 from . import log
 from . import opcode
-if platform.system().lower() in ['darwin', 'linux']:
+if platform.system().lower() in ['darwin', 'linux', 'redox']:
     from . import wasi
 from .core import *
 
